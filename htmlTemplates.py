@@ -1,13 +1,14 @@
 css = '''
 <style>
 .chat-message {
-    padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex
+    padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex;
 }
 .chat-message.user {
-    background-color: #2b313e
+    background-color: #000000;
+    text-color: #000000;
 }
 .chat-message.bot {
-    background-color: #475063
+    background-color: #000000;
 }
 .chat-message .avatar {
   width: 20%;
@@ -21,14 +22,14 @@ css = '''
 .chat-message .message {
   width: 80%;
   padding: 0 1.5rem;
-  color: #fff;
+  color: #11E8CF;
 }
 '''
 
 bot_template = '''
 <div class="chat-message bot">
     <div class="avatar">
-        <img src="https://i.ibb.co/jgKNgj3/Leonardo-Creative-ABSTRACT-A-pie-chart-showing-the-breakdown-a-2.jpg" style="max-height: 78px; max-width: 78px; border-radius: 50%; object-fit: cover;>
+        <img src="https://i.ibb.co/jgKNgj3/Leonardo-Creative-ABSTRACT-A-pie-chart-showing-the-breakdown-a-2.jpg" >
     </div>
     <div class="message">{{MSG}}</div>
 </div>
