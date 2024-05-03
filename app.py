@@ -2,11 +2,13 @@ import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.chat_models import ChatOpenAI
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
+from langchain_core.messages import AIMessage, HumanMessage
+
 from htmlTemplates import css, bot_template, user_template
 
 
@@ -38,6 +40,7 @@ def get_vectorstore(text_chunks):
 
 def get_conversation_chain(vectorstore):
     llm = ChatOpenAI()
+
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
@@ -49,22 +52,26 @@ def get_conversation_chain(vectorstore):
 
 
 def handle_userinput(user_question):
+    if st.session_state.conversation is None:
+        st.warning("Please upload a PDF file and click on 'Process' before starting the chat!")
+        return
+
     response = st.session_state.conversation({'question': user_question})
     st.session_state.chat_history = response['chat_history']
 
-    for i, message in enumerate(st.session_state.chat_history):
-        if i % 2 == 0:
-            st.write(user_template.replace(
-                "{{MSG}}", message.content), unsafe_allow_html=True)
-        else:
-            st.write(bot_template.replace(
-                "{{MSG}}", message.content), unsafe_allow_html=True)
+    for message in st.session_state.chat_history:
+        if isinstance(message, AIMessage):
+            with st.chat_message("AI"):
+                st.markdown(message.content)
+        elif isinstance(message, HumanMessage):
+            with st.chat_message("Human"):
+                st.markdown(message.content)
 
 
 def main():
     load_dotenv()
     st.set_page_config(page_title="Chat with multiple PDFs",
-                       page_icon=":hot_face:")
+                       page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
 
     if "conversation" not in st.session_state:
@@ -72,7 +79,7 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
 
-    st.header("Chat with multiple PDFs :hot_face:")
+    st.header("Chat with multiple PDFs :books:")
     user_question = st.text_input("Ask a question about your documents:")
     if user_question:
         handle_userinput(user_question)
@@ -83,16 +90,9 @@ def main():
             "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
         if st.button("Process"):
             with st.spinner("Processing"):
-                # get pdf text
                 raw_text = get_pdf_text(pdf_docs)
-
-                # get the text chunks
                 text_chunks = get_text_chunks(raw_text)
-
-                # create vector store
                 vectorstore = get_vectorstore(text_chunks)
-
-                # create conversation chain
                 st.session_state.conversation = get_conversation_chain(
                     vectorstore)
 
